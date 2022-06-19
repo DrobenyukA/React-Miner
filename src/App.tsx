@@ -1,8 +1,15 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useEffect } from "react";
+import logo from "./logo.svg";
+import "./App.css";
+import useDidMount from "./hooks/useDidMount";
 
 function App() {
+  useDidMount(() => {
+    console.log("Mount");
+  });
+  useEffect(() => {
+    console.log("Effect");
+  });
   return (
     <div className="App">
       <header className="App-header">
