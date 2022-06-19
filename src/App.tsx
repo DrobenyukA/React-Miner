@@ -1,14 +1,15 @@
-import React, { useEffect } from "react";
 import logo from "./logo.svg";
 import "./App.css";
 import useDidMount from "./hooks/useDidMount";
+import { generateBoard } from "./services/Board.service";
 
 function App() {
   useDidMount(() => {
-    console.log("Mount");
-  });
-  useEffect(() => {
-    console.log("Effect");
+    console.table(
+      generateBoard(10, 10).map((row) =>
+        row.map(({ isBomb, countOfBombs }) => (isBomb ? "Bomb" : countOfBombs))
+      )
+    );
   });
   return (
     <div className="App">
