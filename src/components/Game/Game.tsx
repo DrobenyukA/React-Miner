@@ -5,6 +5,7 @@ import Column from "../Column";
 import {
   getBoardWithOpenedCell,
   getBoardForSafeCell,
+  isSafeCell,
 } from "../../services/Board.service";
 
 interface Props {
@@ -16,13 +17,13 @@ const Game = ({ onGameOver, ...props }: Props) => {
   const [board, setBoard] = useState<Board>(props.board);
 
   const handleCellClick = useCallback(
-    ({ isBomb, countOfBombs }: Cell, coords: Coordinates) => {
-      if (isBomb) {
+    (cell: Cell, coords: Coordinates) => {
+      if (cell.isBomb) {
         alert("Game Over");
         return onGameOver();
       }
 
-      if (countOfBombs > 0) {
+      if (!isSafeCell(cell)) {
         return setBoard((prevBoard) =>
           getBoardWithOpenedCell(prevBoard, coords)
         );
@@ -35,12 +36,6 @@ const Game = ({ onGameOver, ...props }: Props) => {
 
   useEffect(() => {
     setBoard(props.board);
-
-    console.table(
-      props.board.map((row) =>
-        row.map((cell) => (cell.isBomb ? "Bomb" : cell.countOfBombs))
-      )
-    );
   }, [props.board]);
 
   return (

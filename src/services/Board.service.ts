@@ -1,6 +1,6 @@
 import { Board, Cell, Coordinates, Offsets } from "../types/Game";
-
-const surroundingCellsOffsets = [
+// list of offsets that allows to navigate inside the board on cell click
+const surroundingCellsOffsets: Array<Offsets> = [
   [-1, 0], // top
   [-1, 1], // topRight
   [0, 1], // right
@@ -11,12 +11,12 @@ const surroundingCellsOffsets = [
   [-1, -1], // topLeft
 ];
 
-function getCell(isBomb = false, isOpen = false, countOfBombs = 0): Cell {
+function createCell(isBomb = false, isOpen = false, countOfBombs = 0): Cell {
   return { isBomb, isOpen, countOfBombs };
 }
 
-function getRow(size: number): Cell[] {
-  return new Array(size).fill(null).map(() => getCell());
+function createRow(size: number): Cell[] {
+  return new Array(size).fill(null).map(() => createCell());
 }
 
 function getCellCoordinates(board: Board): Coordinates {
@@ -62,14 +62,14 @@ function setBombs(count: number, board: Board) {
   }
 }
 
-function getBombsQuantityPerSize(size: number): number {
+function getBaseBombsQuantityPerSize(size: number): number {
   const percentsOfBombs = 15 / 100;
   return Math.floor(size * size * percentsOfBombs);
 }
 
 export function generateBoard(size: number, bombCount?: number): Board {
-  const bombs = bombCount || getBombsQuantityPerSize(size);
-  const board = new Array(size).fill(null).map(() => getRow(size));
+  const bombs = bombCount || getBaseBombsQuantityPerSize(size);
+  const board = new Array(size).fill(null).map(() => createRow(size));
   setBombs(bombs, board);
   setBombsCount(board);
   return board;
@@ -88,9 +88,8 @@ export function getBoardWithOpenedCell(
 
   return updatedBoard;
 }
-
-function isClickedItem([offsetY, offsetX]: Offsets): boolean {
-  return offsetY !== 0 || offsetX !== 0;
+export function isSafeCell({ countOfBombs, isBomb }: Cell) {
+  return !isBomb && countOfBombs === 0;
 }
 
 export const getBoardForSafeCell = (
