@@ -1,12 +1,18 @@
-import { Board, Cell, Coordinates } from "../types/Game";
+import { Board, Cell, Coordinates, Offsets } from "../types/Game";
 
-function getBombsQuantityPerSize(size: number): number {
-  const percentsOfBombs = 15 / 100;
-  return Math.floor(size * size * percentsOfBombs);
-}
+const surroundingCellsOffsets = [
+  [-1, 0], // top
+  [-1, 1], // topRight
+  [0, 1], // right
+  [1, 1], // bottomRight
+  [1, 0], // bottom
+  [1, -1], // bottomLeft
+  [0, -1], // left
+  [-1, -1], // topLeft
+];
 
-function getCell(isBomb = false, isOpened = false, countOfBombs = 0): Cell {
-  return { isBomb, isOpened, countOfBombs };
+function getCell(isBomb = false, isOpen = false, countOfBombs = 0): Cell {
+  return { isBomb, isOpen, countOfBombs };
 }
 
 function getRow(size: number): Cell[] {
@@ -25,24 +31,9 @@ function get(board: Board, row: number, col: number): Cell | undefined {
 }
 
 function getSurroundingCells(board: Board, { row, cell }: Coordinates): Cell[] {
-  const top = get(board, row - 1, cell);
-  const topRight = get(board, row - 1, cell + 1);
-  const right = get(board, row, cell + 1);
-  const bottomRight = get(board, row + 1, cell + 1);
-  const bottom = get(board, row + 1, cell);
-  const bottomLeft = get(board, row + 1, cell - 1);
-  const left = get(board, row, cell - 1);
-  const topLeft = get(board, row - 1, cell - 1);
-  return [
-    top,
-    topRight,
-    right,
-    bottomRight,
-    bottom,
-    bottomLeft,
-    left,
-    topLeft,
-  ].filter((cell) => !!cell) as Cell[];
+  return surroundingCellsOffsets
+    .map(([y, x]) => get(board, row + y, cell + x))
+    .filter((cell) => !!cell) as Cell[];
 }
 
 function countBombs(board: Board, coords: Coordinates): number {
@@ -50,14 +41,6 @@ function countBombs(board: Board, coords: Coordinates): number {
     (acc, item) => (item.isBomb ? (acc += 1) : acc),
     0
   );
-}
-
-function setBombs(count: number, board: Board) {
-  if (count !== 0) {
-    const { row, cell } = getCellCoordinates(board);
-    board[row][cell] = { ...board[row][cell], isBomb: true, countOfBombs: 0 };
-    setBombs(count - 1, board);
-  }
 }
 
 function setBombsCount(board: Board) {
@@ -71,6 +54,19 @@ function setBombsCount(board: Board) {
   );
 }
 
+function setBombs(count: number, board: Board) {
+  if (count !== 0) {
+    const { row, cell } = getCellCoordinates(board);
+    board[row][cell] = { ...board[row][cell], isBomb: true, countOfBombs: 0 };
+    setBombs(count - 1, board);
+  }
+}
+
+function getBombsQuantityPerSize(size: number): number {
+  const percentsOfBombs = 15 / 100;
+  return Math.floor(size * size * percentsOfBombs);
+}
+
 export function generateBoard(size: number, bombCount?: number): Board {
   const bombs = bombCount || getBombsQuantityPerSize(size);
   const board = new Array(size).fill(null).map(() => getRow(size));
@@ -78,3 +74,41 @@ export function generateBoard(size: number, bombCount?: number): Board {
   setBombsCount(board);
   return board;
 }
+
+export function getBoardWithOpenedCell(
+  board: Board,
+  { row, cell }: Coordinates
+): Board {
+  const updatedCell = { ...board[row][cell], isOpen: true };
+  const updatedRow = [...board[row]];
+  const updatedBoard = [...board];
+
+  updatedRow[cell] = updatedCell;
+  updatedBoard[row] = updatedRow;
+
+  return updatedBoard;
+}
+
+function isClickedItem([offsetY, offsetX]: Offsets): boolean {
+  return offsetY !== 0 || offsetX !== 0;
+}
+
+export const getBoardForSafeCell = (
+  board: Board,
+  { row, cell }: Coordinates
+): Board => {
+  return [[0, 0]]
+    .concat(surroundingCellsOffsets)
+    .reduce((newBoard, [offsetY, offsetX]) => {
+      const current = get(board, row + offsetY, cell + offsetX);
+
+      if (current && !current.isBomb && !current.isOpen) {
+        return getBoardWithOpenedCell(newBoard, {
+          row: row + offsetY,
+          cell: cell + offsetX,
+        });
+      }
+
+      return newBoard;
+    }, board);
+};
